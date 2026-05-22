@@ -2,7 +2,7 @@
 
 A TCP load balancer built from scratch in Go. No libraries, no frameworks just the standard library and a mutex.
 
-I built this after reading about Vasilios Syrakis, a Senior Systems Engineer at Atlassian who built Sovereign: an Envoy proxy management system running across 2,000 servers in 13 AWS regions. That kind of infrastructure is the kind of thing I want to understand from the ground up. This is step one.
+I built this after reading about and watching a video by Vasilios Syrakis, a Senior Systems Engineer at Atlassian who built Sovereign: an Envoy proxy management system running across 2,000 servers in 13 AWS regions. That kind of infrastructure is the kind of thing I want to understand from the ground up. This is step one.
 
 ---
 
@@ -113,7 +113,7 @@ The balancer detects it's alive again. It re-enters the rotation. Nothing needs 
 
 ## How the load balancer works internally
 
-**Round-robin selection** — `getNextServer()` tracks a `current` index. Every call increments it, wrapping around with modulo. If a server is marked dead, it skips it and tries the next one. If nothing is alive, it returns `nil`.
+**Round-robin selection** `getNextServer()` tracks a `current` index. Every call increments it, wrapping around with modulo. If a server is marked dead, it skips it and tries the next one. If nothing is alive, it returns `nil`.
 
 **Concurrency safety** Multiple requests hit the balancer at the same time. The `current` index is shared state, so it's protected by a `sync.Mutex`. One goroutine at a time gets to read and update it.
 
