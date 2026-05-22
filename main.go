@@ -6,12 +6,18 @@ import (
 	"net/http/httputil" // reverse proxy, forwards traffic to backend servers. In load-balancers
 	"net/url" // Used for working with URLs.
 	"sync" // For concurrency safety (threads) 'go'
+	"time"
 )
 
-var servers = []string{
-	"http://localhost:8081",
-	"http://localhost:8082",
-	"http://localhost:8083",
+type Server struct {
+	URL string
+	Alive bool
+}
+
+var servers = []*Server{
+	{URL: "http://localhost:8081", Alive: true},
+	{URL: "http://localhost:8082", Alive: true},
+	{URL: "http://localhost:8083", Alive: true},
 }
 
 // Mutex to protect access to the current server index.
@@ -19,25 +25,67 @@ var servers = []string{
 var mu sync.Mutex
 var current int
 
-func getNextServer() string {
+func getNextServer() *Server {
 	mu.Lock() //only one goroutine can execute this critical section at a time.
 	defer mu.Unlock() // Run this later before the function exits.
-	server := servers[current] //   := variable declaration and assignment in one step. in C# += 
-	current = (current + 1) % len (servers)  // Move to the next server index, get remainder to loop back to the start of the list.
-	return server
+	
+	total := len(servers)
+	for i := 0; i < total; i++ {
+		idx := (current + i) % total
+		if servers[idx].Alive {
+			current = (idx + 1 ) % total
+			return servers[idx]
+		}
+	}
+	return nil
 }
 
-func handleRequest(w http.ResponseWriter, r *http.Request) {
-	target := getNextServer()
-	fmt.Println("Forwarding to: ", target)
+func healthCheck() {
+	for { 
+		for _, server := range servers { 
+			resp, err := http.Get(server.URL)
+			mu.Lock()
 
-	url, _ := url.Parse(target) // no try-catch or exceptions in Go.
+			if err != nil || resp == nil || resp.StatusCode != 200 {
+				if server.Alive {
+					fmt.Println("Server Down: ", server.URL)
+				}
+				server.Alive = false
+			} else {
+				if !server.Alive {
+					fmt.Println("Server Up: ", server.URL)
+				}
+				server.Alive = true
+			}
+			if err == nil && resp != nil {
+				resp.Body.Close() // Close the response body to prevent resource leaks.
+			}
+			mu.Unlock()
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+	server := getNextServer()
+
+	if server == nil {
+		http.Error(w, "No servers available", http.StatusServiceUnavailable)
+		return
+	}
+
+	fmt.Println("Forwarding to: ", server.URL)
+
+	url, _ := url.Parse(server.URL) // no try-catch or exceptions in Go.
 	proxy := httputil.NewSingleHostReverseProxy(url)
 	proxy.ServeHTTP(w, r)
 }
 
 
 func main() {
+	go healthCheck()
+
     http.HandleFunc("/", handleRequest)
 	fmt.Println("Load blancer running on port 8080")
 	http.ListenAndServe(":8080", nil)
