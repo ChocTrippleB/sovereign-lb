@@ -38,5 +38,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-    
+    http.HandleFunc("/", handleRequest)
+	fmt.Println("Load blancer running on port 8080")
+	http.ListenAndServe(":8080", nil)
 }
