@@ -15,9 +15,9 @@ type Server struct {
 }
 
 var servers = []*Server{
-	{URL: "http://localhost:8081", Alive: true},
-	{URL: "http://localhost:8082", Alive: true},
-	{URL: "http://localhost:8083", Alive: true},
+    {URL: "http://server1:8081", Alive: true},
+    {URL: "http://server2:8082", Alive: true},
+    {URL: "http://server3:8083", Alive: true},
 }
 
 // Mutex to protect access to the current server index.

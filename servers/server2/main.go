@@ -7,9 +7,9 @@ import (
 
 func main() {
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "Hello from Server 3")
+        fmt.Fprintln(w, "Hello from Server 2")
     })
 
-    fmt.Println("Server 1 running on port 8083")
-    http.ListenAndServe(":8083", nil)
+    fmt.Println("Server 2 running on port 8082")
+    http.ListenAndServe(":8082", nil)
 }

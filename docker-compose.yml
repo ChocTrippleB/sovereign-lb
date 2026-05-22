@@ -1,0 +1,22 @@
+services:
+  server1:
+    build: ./servers/server1
+    container_name: server1
+
+  server2:
+    build: ./servers/server2
+    container_name: server2
+
+  server3:
+    build: ./servers/server3
+    container_name: server3
+
+  loadbalancer:
+    build: .
+    container_name: loadbalancer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - server1
+      - server2
+      - server3
